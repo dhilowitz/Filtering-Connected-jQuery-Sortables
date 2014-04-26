@@ -39,7 +39,7 @@ $(function () {
 				var blockWidth = $(item).data('blockWidth');
 				ui.placeholder.removeAttr('class');
             	ui.placeholder.html('&nbsp;');
-				ui.placeholder.addClass('my-element my-element-placeholder col-xs-' + blockWidth);
+            	ui.placeholder.addClass('my-element my-element-placeholder col-xs-' + blockWidth);
 			} else {
 				console.log("%c%s#%s.%s Event: start: We are dragging an element from another row.", "color: DarkGoldenRod;", this.localName, this.id, this.className.replace(/ /g,"."));
 				
@@ -62,7 +62,7 @@ $(function () {
 			var item = ui.item[0];
 			if($(item).hasClass('toolbar-element')) {
 				var blockWidth = $(item).data('blockWidth');
-				ui.item.replaceWith('<div class="my-element col-sm-' + blockWidth + '">' + blockWidth + 'U</div>');
+				ui.item.replaceWith('<div class="col-sm-' + blockWidth + ' my-element" data-block-width="' + blockWidth + '">' + blockWidth + 'U</div>');
 			}
         },
         stop: function(event, ui) {
@@ -71,13 +71,36 @@ $(function () {
         }
     });
 
-	$('.toolbar-element').on('mousedown', function(event, ui) {
+	beforeSortableStart = function(event, ui) {
 		console.log("%c%s#%s.%s Event: mouseDown", "color: green;", this.localName, this.id, this.className.replace(/ /g,"."));
+		
+		// if(this.parentElement.id != 'my-row-2') {
+			
+		var newElementBlockWidth = $(this).data('blockWidth');
+		var rows = $(".my-row");
 
-		if(this.parentElement.id != 'my-row-2') {
-			$('#my-row-2').sortable("disable");	
-		}
-	});
+		for (var index=0;index<rows.length;index++) {
+			var row = rows[index];
+			if(row == this.parentElement) {
+				// Don't disable the row we are currently on becuase we already know that we can fit the element 
+				// we're about to try to move. We want to allow folks to reorder rows they are working with
+				continue;
+			}
+			var elements = $(row).children();
+			var spaceLeft = 12;
+			for (var elIndex=0;elIndex<elements.length;elIndex++) {
+				var el = elements[elIndex];
+				var elBlockWidth = $(el).data('blockWidth');
+				spaceLeft -= elBlockWidth;
+			}
+			if(spaceLeft < newElementBlockWidth) {
+				$(row).sortable("disable");	
+			}
+		}	
+	} 
+
+	$('.toolbar-element').on('mousedown', beforeSortableStart);
+	$('.my-element').on('mousedown', beforeSortableStart);
 
 	$('.toolbar-element').on('mouseup', function(event, ui) {
 		console.log("%c%s#%s.%s Event: mouseUp", "color: green;", this.localName, this.id, this.className.replace(/ /g,"."));
@@ -86,14 +109,6 @@ $(function () {
 		$(".my-row").sortable("enable");
 	});
 
-	$('.my-element').on('mousedown', function(event, ui) {
-		console.log("%c%s#%s.%s Event: mouseDown", "color: green;", this.localName, this.id, this.className.replace(/ /g,"."));
-
-		if(this.parentElement.id != 'my-row-2') {
-			$('#my-row-2').sortable("disable");	
-		}
-		
-	});
 
 	$('.my-element').on('mouseup', function(event, ui) {
 		console.log("%c%s#%s.%s Event: mouseup", "color: green;", this.localName, this.id, this.className.replace(/ /g,"."));
